@@ -1,212 +1,60 @@
-# Books ETL Pipeline with Apache Airflow
+# Books ETL Pipeline
 
-A personal Data Engineering project that extracts book data from [Books to Scrape](https://books.toscrape.com/), transforms it with Python, and loads it into PostgreSQL through an Apache Airflow workflow.
+Projet personnel de Data Engineering : collecte, transformation et stockage de donnees de livres avec Apache Airflow.
 
-## Project Overview
+## Objectif
 
-This project demonstrates a complete ETL workflow:
+Le pipeline recupere des livres depuis [Books to Scrape](https://books.toscrape.com/), extrait leur titre, prix, note et disponibilite, puis enregistre les resultats dans PostgreSQL.
 
-```text
-Books to Scrape
-      |
-      v
-fetch_book_data
-      |
-      v
-create_table
-      |
-      v
-insert_book_data
-      |
-      v
-PostgreSQL: books_scraped
-```
+## Fonctionnement
 
-The pipeline collects up to 50 books per run and stores their title, price, rating, and availability.
+Le workflow Airflow `books_etl_pipeline` execute les etapes suivantes dans l'ordre :
+
+1. Recuperation de 50 livres depuis le site web.
+2. Nettoyage des donnees et suppression des doublons.
+3. Creation automatique de la table `books_scraped`.
+4. Insertion des donnees dans PostgreSQL.
+
+Le workflow est planifie quotidiennement et peut aussi etre lance manuellement depuis Airflow.
 
 ## Technologies
 
-- Python
-- Apache Airflow 3.1.6
-- Docker and Docker Compose
-- PostgreSQL
-- Redis
-- Requests
-- BeautifulSoup
-- Pandas
-- SQL
+Python, Apache Airflow, Docker, Docker Compose, PostgreSQL, Redis, Pandas, BeautifulSoup et SQL.
 
-## Airflow DAG
+## Resultat
 
-The DAG is defined in [`dags/dag.py`](dags/dag.py) and is named `books_etl_pipeline`.
+Le pipeline a ete execute avec succes. Les donnees sont stockees dans PostgreSQL dans la table `books_scraped`.
 
-It contains three dependent tasks:
+Les captures ci-dessous montrent le fonctionnement reel du projet :
 
-1. `fetch_book_data`: requests up to three catalogue pages, extracts book information, removes duplicate titles, and sends the records to Airflow XCom.
-2. `create_table`: creates the PostgreSQL table `public.books_scraped` if it does not already exist.
-3. `insert_book_data`: reads the extracted records from XCom and inserts them into PostgreSQL.
+## Captures d'ecran
 
-The workflow is scheduled daily and configured with `catchup=False`.
+### Execution du DAG Airflow
 
-## Run the Project
+Les trois taches du workflow sont terminees avec succes.
 
-Open PowerShell in the project directory:
+![Execution du DAG Airflow](docs/screenshots/01-airflow-dag-success.png)
 
-```powershell
-cd "C:\Path\To\airflow_project"
-Copy-Item .env.example .env
-```
+### Logs de collecte
 
-The `.env` file is intentionally ignored by Git. It contains local Docker settings; use `.env.example` as the public template.
+Les logs montrent que le site repond correctement et que 50 livres ont ete collectes.
 
-Initialize the Airflow database and administrator account:
+![Logs de collecte](docs/screenshots/02-fetch-task-logs.png)
 
-```powershell
-docker compose up airflow-init
-```
+### Resultats PostgreSQL
 
-Start the services:
+La table contient les livres recuperes avec leur titre, prix, note et disponibilite.
 
-```powershell
-docker compose up -d
-```
+![Resultats PostgreSQL](docs/screenshots/03-postgres-results_1.png)
 
-Check the services:
+![Echantillon des donnees PostgreSQL](docs/screenshots/03-postgres-results_2.png)
 
-```powershell
-docker compose ps
-```
+### Services Docker
 
-Open the Airflow interface at [http://localhost:8080](http://localhost:8080).
+Les conteneurs Airflow, PostgreSQL et Redis sont actifs.
 
-Default local credentials:
+![Services Docker](docs/screenshots/04-docker-services.png)
 
-```text
-Username: airflow
-Password: airflow
-```
+## Valeur du projet
 
-## Configure the PostgreSQL Connection
-
-In Airflow, open **Admin > Connections** and create or update the connection with:
-
-```text
-Connection Id: books_connection
-Connection Type: Postgres
-Host: postgres
-Port: 5432
-Database: airflow
-Username: airflow
-Password: airflow
-```
-
-The host must be `postgres` because PostgreSQL is another service in the Docker Compose network.
-
-## Run and Verify the DAG
-
-In Airflow:
-
-1. Find `books_etl_pipeline`.
-2. Enable it if it is paused.
-3. Click **Trigger DAG**.
-4. Open the run and verify that all three tasks are green:
-   - `fetch_book_data`
-   - `create_table`
-   - `insert_book_data`
-
-Verify the result directly in PostgreSQL:
-
-```powershell
-docker compose exec postgres psql -U airflow -d airflow -c "SELECT COUNT(*) FROM public.books_scraped;"
-```
-
-Display sample records:
-
-```powershell
-docker compose exec postgres psql -U airflow -d airflow -c "SELECT title, price, rating, availability FROM public.books_scraped LIMIT 10;"
-```
-
-Expected result: the table contains the books collected by the successful DAG runs. Each manual run inserts up to 50 records.
-
-## Evidence of a Successful Run
-
-The repository can include screenshots showing:
-
-1. Airflow Graph view with the three tasks completed successfully.
-2. `fetch_book_data` logs showing HTTP status `200`, books found, and the final number of records.
-3. PostgreSQL Query Tool showing `SELECT COUNT(*)` and sample rows from `books_scraped`.
-4. Docker Compose services running with `docker compose ps`.
-
-Add the images to `docs/screenshots/` using these names:
-
-```text
-docs/screenshots/01-airflow-dag-success.png
-docs/screenshots/02-fetch-task-logs.png
-docs/screenshots/03-postgres-results_1.png
-docs/screenshots/03-postgres-results_2.png
-docs/screenshots/04-docker-services.png
-```
-
-Then uncomment the following section and update the paths if necessary:
-
-<!--
-## Screenshots
-
-### Airflow DAG succeeded
-
-![Airflow DAG succeeded](docs/screenshots/01-airflow-dag-success.png)
-
-### Extraction logs
-
-![Extraction logs](docs/screenshots/02-fetch-task-logs.png)
-
-### PostgreSQL results
-
-![PostgreSQL results](docs/screenshots/03-postgres-results.png)
-
-### Docker services
-
-![Docker services](docs/screenshots/04-docker-services.png)
--->
-
-## Project Structure
-
-```text
-.
-├── dags/
-│   └── dag.py
-├── config/
-│   └── airflow.cfg
-├── plugins/
-├── docs/
-│   └── screenshots/
-├── docker-compose.yaml
-├── requirements.txt
-└── README.md
-```
-
-## Stop the Project
-
-```powershell
-docker compose down
-```
-
-The PostgreSQL data volume is preserved by default. To remove containers and stored database data, use the destructive command below only when that is intentional:
-
-```powershell
-docker compose down -v
-```
-
-## Limitations and Future Improvements
-
-- Add a unique constraint or an upsert strategy to prevent duplicate rows across runs.
-- Add automated tests for parsing and data validation.
-- Store an extraction timestamp for each record.
-- Move runtime dependencies into a custom Airflow image instead of installing them at container startup.
-- Add monitoring and alerting for failed DAG runs.
-
-## CV Summary
-
-> Developed a Dockerized ETL pipeline with Apache Airflow to scrape book data, transform it with Python, and load it into PostgreSQL. Implemented dependent workflow tasks, scheduled execution, XCom data passing, and SQL-based result validation.
-
-This is a personal project and a practical demonstration of ETL orchestration, Dockerized services, web data extraction, and relational data loading.
+Ce projet montre la mise en place d'un pipeline ETL complet, l'orchestration de taches dependantes avec Airflow, l'utilisation de Docker pour l'environnement technique et le stockage de donnees dans une base relationnelle.
