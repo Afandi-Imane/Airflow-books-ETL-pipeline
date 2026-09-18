@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+vev/
+venv/
+.venv/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Airflow runtime data
+logs/
+
+# Local IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+htmlcov/
