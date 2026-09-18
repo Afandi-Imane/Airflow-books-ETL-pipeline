@@ -48,14 +48,6 @@ It contains three dependent tasks:
 
 The workflow is scheduled daily and configured with `catchup=False`.
 
-## Prerequisites
-
-- Docker Desktop with the Linux engine running
-- Git
-- At least 4 GB of memory allocated to Docker is recommended
-
-Airflow is provided by Docker. It is not necessary to install Apache Airflow in the local Python virtual environment.
-
 ## Run the Project
 
 Open PowerShell in the project directory:
